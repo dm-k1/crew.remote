@@ -96,7 +96,10 @@ Services (Amazon Linux 2023 and Docker on every machine):
   command from S3 every 20 seconds and stops when the boss writes `done`.
   When AWS gives notice that it takes a machine back (two minutes ahead), the
   machine copies its logs to S3 and stops; its running tasks go to other
-  workers. `CREW_REMOTE_CAPACITY_REBALANCE=1` starts a replacement as soon as
+  workers. A machine whose workers stop by themselves (a failed setup, say
+  too little memory) copies its logs and stays up, idle, until the safety
+  cutoff, rather than being replaced by one that fails the same way. Why each
+  machine stopped is in `s3://<bucket>/<run name>/worker-stops/`. `CREW_REMOTE_CAPACITY_REBALANCE=1` starts a replacement as soon as
   AWS signals a machine is at risk (needs spot quota for one machine more).
 - `boss-policy.json` and `worker-policy.json`: what the boss's and the
   workers' roles may do (replace `__BUCKET__`).
@@ -135,7 +138,8 @@ Both end-to-end tests run the same tiny pipeline
 (`tests/end-to-end/pipeline/_targets.R`) and the same checks
 (`tests/end-to-end/check.R`): every task done once, tasks on at least two
 machines, finished tasks stay finished when the boss is lost, the workers find
-the new boss, and an interrupted machine stops and copies its logs.
+the new boss, an interrupted machine stops and copies its logs, and a machine
+whose setup fails reports it (locally, one worker's setup fails on purpose).
 
 ## Install
 
