@@ -1,4 +1,4 @@
-# The image for the local test: R, the packages, the AWS command line tool
+# The image of the local end-to-end test: R, the packages, the AWS command line tool
 # (talking to a local S3), curl, and crew.remote from this checkout
 FROM rocker/r-ver:4.6.1
 RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends \

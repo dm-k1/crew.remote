@@ -1,5 +1,10 @@
 # crew.remote 0.2.0
 
+- Tests: R tests per part (`tests/testthat/`), and end-to-end tests in
+  `tests/end-to-end/`: the same pipeline and checks without AWS (Docker
+  Compose with moto and AWS's metadata mock, in GitHub Actions) and on AWS,
+  including a lost and restarted boss.
+
 - Workers that cannot reach the controller back off: each further start
   waits twice as long, up to 5 minutes; a new worker command is tried at once.
 - AWS: encrypted disks; worker machines in a security group with no inbound

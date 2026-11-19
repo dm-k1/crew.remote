@@ -3,10 +3,10 @@
 # mode), and the instance metadata
 # service replaced by AWS's own mock (amazon-ec2-metadata-mock), which gives
 # worker-b a spot interruption notice 75 seconds in. 30 seconds in, the boss
-# is lost and comes back under another address (local-test/boss.sh). The boss
-# checks the outcome and its exit status is the test's (local-test/check.R).
+# is lost and comes back under another address (boss.sh). The boss runs the
+# checks at the end (../check.R); its exit status is the test's.
 #
-#   docker compose -f local-test/compose.yaml up --build --abort-on-container-exit --exit-code-from boss
+#   docker compose -f tests/end-to-end/local/compose.yaml up --build --abort-on-container-exit --exit-code-from boss
 x-aws: &aws
   AWS_ACCESS_KEY_ID: crewremote
   AWS_SECRET_ACCESS_KEY: crewremote-secret
@@ -16,6 +16,7 @@ x-aws: &aws
   TASKS: "80"
   TASK_SECONDS: "5"
   CREW_REMOTE_WATCH_SECONDS: "3"
+  EXPECT_SPOT: "1"
 
 services:
   s3:
@@ -26,26 +27,26 @@ services:
     command: ["spot", "-d", "75", "-a", "terminate", "-I"]
 
   boss:
-    build: {context: .., dockerfile: local-test/Dockerfile}
+    build: {context: ../../.., dockerfile: tests/end-to-end/local/Dockerfile}
     hostname: boss
     init: true # reaps the lost boss's processes, so targets sees them gone
     networks:
       default:
         aliases: [boss-again]
     environment: *aws
-    command: bash local-test/boss.sh
+    command: bash tests/end-to-end/local/boss.sh
     depends_on: [s3]
 
   worker-a:
-    build: {context: .., dockerfile: local-test/Dockerfile}
+    build: {context: ../../.., dockerfile: tests/end-to-end/local/Dockerfile}
     hostname: worker-a
     environment: {<<: *aws, CREW_REMOTE_IMDS: "http://127.0.0.1:9"}
-    command: bash local-test/worker.sh
+    command: bash tests/end-to-end/local/worker.sh
     depends_on: [s3]
 
   worker-b:
-    build: {context: .., dockerfile: local-test/Dockerfile}
+    build: {context: ../../.., dockerfile: tests/end-to-end/local/Dockerfile}
     hostname: worker-b
     environment: {<<: *aws, CREW_REMOTE_IMDS: "http://imds-b:1338"}
-    command: bash local-test/worker.sh
+    command: bash tests/end-to-end/local/worker.sh
     depends_on: [s3, imds-b]
