@@ -28,6 +28,7 @@ services:
   boss:
     build: {context: .., dockerfile: local-test/Dockerfile}
     hostname: boss
+    init: true # reaps the lost boss's processes, so targets sees them gone
     networks:
       default:
         aliases: [boss-again]
