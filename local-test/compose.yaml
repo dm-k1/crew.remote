@@ -1,0 +1,49 @@
+# crew.remote's local test: the AWS flow without AWS. A boss and two worker
+# "machines" (containers), S3 replaced by MinIO, and the instance metadata
+# service replaced by AWS's own mock (amazon-ec2-metadata-mock), which gives
+# worker-b a spot interruption notice 40 seconds in. The boss checks the
+# outcome and its exit status is the test's (local-test/check.R).
+#
+#   docker compose -f local-test/compose.yaml up --build --abort-on-container-exit --exit-code-from boss
+x-aws: &aws
+  AWS_ACCESS_KEY_ID: crewremote
+  AWS_SECRET_ACCESS_KEY: crewremote-secret
+  AWS_DEFAULT_REGION: us-east-1
+  AWS_ENDPOINT_URL: http://s3:9000
+  RUN_FOLDER: s3://crew-remote-test/local
+  TASKS: "60"
+  TASK_SECONDS: "5"
+  CREW_REMOTE_WATCH_SECONDS: "3"
+
+services:
+  s3:
+    image: minio/minio
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: crewremote
+      MINIO_ROOT_PASSWORD: crewremote-secret
+
+  imds-b:
+    image: public.ecr.aws/aws-ec2/amazon-ec2-metadata-mock:v1.13.0
+    command: ["spot", "-d", "40", "-a", "terminate", "-I"]
+
+  boss:
+    build: {context: .., dockerfile: local-test/Dockerfile}
+    hostname: boss
+    environment: {<<: *aws, CREW_REMOTE_ADDRESS: boss}
+    command: bash local-test/boss.sh
+    depends_on: [s3]
+
+  worker-a:
+    build: {context: .., dockerfile: local-test/Dockerfile}
+    hostname: worker-a
+    environment: {<<: *aws, CREW_REMOTE_IMDS: "http://127.0.0.1:9"}
+    command: bash local-test/worker.sh
+    depends_on: [s3]
+
+  worker-b:
+    build: {context: .., dockerfile: local-test/Dockerfile}
+    hostname: worker-b
+    environment: {<<: *aws, CREW_REMOTE_IMDS: "http://imds-b:1338"}
+    command: bash local-test/worker.sh
+    depends_on: [s3, imds-b]

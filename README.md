@@ -86,7 +86,7 @@ Services (Amazon Linux 2023 and Docker on every machine):
 
 - `launch_boss.sh`: the boss, one on-demand instance (AWS does not take it
   back) with a security group that starts closed. It runs your own user data
-  script, into which it puts `boss-helpers.sh`: functions to copy the worker
+  script, into which it puts `helpers.sh`: functions to copy the worker
   command to S3, to open the port to exactly the run's worker machines, and at
   the end to stop them and delete their fleets.
 - `launch_workers.sh`: one EC2 Fleet of spot instances per region (each region

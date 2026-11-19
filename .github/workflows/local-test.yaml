@@ -1,0 +1,22 @@
+# The AWS flow without AWS (local-test/compose.yaml): a boss, two worker
+# containers, MinIO for S3 and AWS's metadata mock giving one worker a spot
+# interruption notice
+name: local-test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  local-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Boss, workers, S3 and metadata mock
+        run: docker compose -f local-test/compose.yaml up --build --abort-on-container-exit --exit-code-from boss

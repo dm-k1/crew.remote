@@ -52,7 +52,12 @@ fill() {
   while [ $# -gt 0 ]; do text=${text//"$1"/"$2"}; shift 2; done
   printf '%s\n' "$text"
 }
-user_data=$(fill "$here/worker-data.sh" \
+with_helpers=$(mktemp)
+awk -v helpers="$here/helpers.sh" '
+  /^# crew.remote: (boss )?helpers/ { while ((getline line < helpers) > 0) print line; next }
+  { print }
+' "$here/worker-data.sh" > "$with_helpers"
+user_data=$(fill "$with_helpers" \
   __RUN_FOLDER__ "s3://$CREW_REMOTE_BUCKET/$RUN_NAME" \
   __BUCKET_REGION__ "$CREW_REMOTE_BUCKET_REGION" \
   __REPO__ "$CREW_REMOTE_REPO" \
@@ -62,6 +67,7 @@ user_data=$(fill "$here/worker-data.sh" \
   __DOCKER_OPTIONS__ "${CREW_REMOTE_DOCKER_OPTIONS:-}" \
   __CALL_FILE__ "${CREW_REMOTE_CALL_FILE:-cache/remote/worker_call.R}" \
   __MAX_HOURS__ "$HOURS" | base64 | tr -d '\n')
+rm -f "$with_helpers"
 
 ## the workers' security group in the default network: no inbound rules
 vpc=$(aws ec2 describe-vpcs --region "$REGION" --filters Name=is-default,Values=true \

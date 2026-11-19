@@ -7,8 +7,8 @@
 ##
 ##  The user data file is the project's own script for the boss (it runs the
 ##  pipeline with crew_controller_remote()). Where it has the line
-##  "# crew.remote: boss helpers", the functions of boss-helpers.sh are put
-##  in, for it to call. On-demand, so AWS does not take it back.
+##  "# crew.remote: helpers" (or "# crew.remote: boss helpers"), the
+##  functions of helpers.sh are put in, for it to call. On-demand, so AWS does not take it back.
 ##
 ##  Settings, as environment variables: CREW_REMOTE_BOSS_ROLE, an instance
 ##  profile that may use the bucket, see the run's instances and fleets,
@@ -31,8 +31,8 @@ here="$(cd "$(dirname "$0")" && pwd)"
 
 ## the user data with the helpers put in
 filled=$(mktemp)
-awk -v helpers="$here/boss-helpers.sh" '
-  /^# crew.remote: boss helpers/ { while ((getline line < helpers) > 0) print line; next }
+awk -v helpers="$here/helpers.sh" '
+  /^# crew.remote: (boss )?helpers/ { while ((getline line < helpers) > 0) print line; next }
   { print }
 ' "$USER_DATA" > "$filled"
 

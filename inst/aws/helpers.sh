@@ -1,8 +1,11 @@
 ## =====================================================================
-##  crew.remote: shell functions for the boss machine on AWS (unofficial;
-##  not part of crew). launch_boss.sh puts them into the boss's user data
-##  where it has the line "# crew.remote: boss helpers".
+##  crew.remote: shell functions for the boss and the worker machines on AWS
+##  (unofficial; not part of crew). launch_boss.sh and launch_workers.sh put
+##  them into the user data where it has the line "# crew.remote: helpers"
+##  (or "# crew.remote: boss helpers"). The instance metadata service is
+##  CREW_REMOTE_IMDS (default http://169.254.169.254; a mock in local tests).
 ##
+##  For the boss:
 ##    crew_remote_publish_call <call file> <s3 run folder>
 ##        the worker command to S3 whenever it changes
 ##    crew_remote_let_workers_in <port> <run name> "<worker regions>"
@@ -11,14 +14,30 @@
 ##    crew_remote_stop_workers <s3 run folder> <run name> "<worker regions>"
 ##        writes "done" (workers then stop and copy their logs), waits 90
 ##        seconds, and deletes the run's worker fleets, machines and all
+##
+##  For a worker machine (define crew_remote_workers_running first: whether
+##  its workers still run):
+##    crew_remote_watch <s3 run folder> <call file>
+##        every 20 seconds, the worker command from S3 to the call file;
+##        returns when the workers stop, the boss writes "done", or AWS gives
+##        notice that it takes the machine back (and says which)
 ## =====================================================================
 
-## this instance's own details (the instance metadata service, IMDSv2)
+## this instance's own details (the instance metadata service, IMDSv2):
+## crew_remote_metadata <path> prints it; crew_remote_metadata_status <path>
+## prints the HTTP status (200 if there, 404 if not)
+crew_remote_imds_token() {
+  curl -s --max-time 2 -X PUT "${CREW_REMOTE_IMDS:-http://169.254.169.254}/latest/api/token" \
+    -H "X-aws-ec2-metadata-token-ttl-seconds: 300"
+}
 crew_remote_metadata() {
-  local token
-  token=$(curl -s -X PUT http://169.254.169.254/latest/api/token \
-    -H "X-aws-ec2-metadata-token-ttl-seconds: 300")
-  curl -s -H "X-aws-ec2-metadata-token: $token" "http://169.254.169.254/latest/meta-data/$1"
+  curl -s --max-time 2 -H "X-aws-ec2-metadata-token: $(crew_remote_imds_token)" \
+    "${CREW_REMOTE_IMDS:-http://169.254.169.254}/latest/meta-data/$1"
+}
+crew_remote_metadata_status() {
+  curl -s --max-time 2 -o /dev/null -w '%{http_code}' \
+    -H "X-aws-ec2-metadata-token: $(crew_remote_imds_token)" \
+    "${CREW_REMOTE_IMDS:-http://169.254.169.254}/latest/meta-data/$1"
 }
 
 crew_remote_publish_call() {
@@ -67,4 +86,22 @@ crew_remote_stop_workers() {
     [ -n "$fleets" ] && aws ec2 delete-fleets --region "$worker_region" \
       --fleet-ids $fleets --terminate-instances || true
   done
+}
+
+crew_remote_watch() {
+  local folder="$1" call="$2"
+  while crew_remote_workers_running; do
+    aws s3 cp "$folder/worker_call.R" "$call.new" --only-show-errors 2>/dev/null &&
+      mv "$call.new" "$call"
+    if aws s3 ls "$folder/done" > /dev/null 2>&1; then
+      echo "the run is done"
+      return
+    fi
+    if [ "$(crew_remote_metadata_status spot/instance-action)" = "200" ]; then
+      echo "AWS takes this machine back"
+      return
+    fi
+    sleep "${CREW_REMOTE_WATCH_SECONDS:-20}"
+  done
+  echo "the workers stopped"
 }
