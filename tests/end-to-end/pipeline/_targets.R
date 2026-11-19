@@ -1,8 +1,8 @@
 ## =====================================================================
-##  A tiny pipeline to test crew.remote: TASKS tasks (default 60) that each
-##  wait TASK_SECONDS (default 30) and report which machine (and AWS region)
-##  ran them. Run on the boss with CREW_REMOTE_ADDRESS set (on AWS by
-##  aws-test/boss-data.sh, locally by local-test/boss.sh).
+##  The tiny pipeline of crew.remote's end-to-end tests: TASKS tasks (default
+##  60) that each wait TASK_SECONDS (default 30) and report which machine (and
+##  AWS region) ran them. Run on the boss with CREW_REMOTE_ADDRESS set (by
+##  local/boss.sh, or on AWS by aws/boss-data.sh).
 ## =====================================================================
 library(targets)
 tar_option_set(

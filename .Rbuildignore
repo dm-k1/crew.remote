@@ -1,4 +1,3 @@
 ^LICENSE\.md$
 ^\.github$
-^aws-test$
-^local-test$
+^tests/end-to-end$

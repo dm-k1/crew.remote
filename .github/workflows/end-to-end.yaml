@@ -1,0 +1,22 @@
+# crew.remote's end-to-end test without AWS (tests/end-to-end/local): a
+# boss, two worker containers, moto for S3 and AWS's metadata mock giving one
+# worker a spot interruption notice; the boss is lost and restarted partway
+name: end-to-end
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Boss, workers, S3 and metadata mock
+        run: docker compose -f tests/end-to-end/local/compose.yaml up --build --abort-on-container-exit --exit-code-from boss
