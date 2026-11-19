@@ -11,12 +11,12 @@ until aws s3 mb s3://crew-remote-test 2>/dev/null || aws s3 ls s3://crew-remote-
 while true; do crew_remote_publish_call aws-test/cache/remote/worker_call.R "$RUN_FOLDER"; sleep 2; done &
 cd aws-test || exit 1
 
-# the first boss, lost after 30 seconds (its own process group, so the
-# pipeline's subprocesses go with it)
-CREW_REMOTE_ADDRESS=boss setsid Rscript -e 'targets::tar_make()' &
-first=$!
+# the first boss, lost after 30 seconds: every R process of this "machine"
+# killed at once, as when a machine is lost
+CREW_REMOTE_ADDRESS=boss Rscript -e 'targets::tar_make()' &
 sleep 30
-kill -KILL -- "-$first"
+pkill -KILL -x R
+sleep 2
 date -u +%Y-%m-%dT%H:%M:%S > restarted_at.txt
 Rscript -e 'cat("tasks finished before the restart:", sum(targets::tar_progress()$progress == "completed"), "\n")'
 
