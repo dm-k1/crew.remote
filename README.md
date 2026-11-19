@@ -111,6 +111,27 @@ Settings are environment variables (`CREW_REMOTE_BUCKET`, `CREW_REMOTE_IMAGE`,
 [flatcor-validation](https://github.com/dm-k1/flatcor-validation)
 (`cluster/aws/`, `cluster/README.md`).
 
+## Testing
+
+Three levels, cheapest first; changes are tested at the first two, real AWS
+only as a final check:
+
+1. **R tests** (`tests/testthat`): a controller and workers in separate R
+   processes on one machine; a killed worker's task is reported as a crash;
+   workers that cannot reach the controller back off. GitHub Actions runs them
+   (R CMD check) on Linux and macOS.
+2. **The AWS flow without AWS** (`local-test/`, Docker Compose; GitHub Actions
+   runs it): a boss and two worker containers, S3 replaced by
+   [moto](https://github.com/getmoto/moto), and the instance metadata service
+   by AWS's [amazon-ec2-metadata-mock](https://github.com/aws/amazon-ec2-metadata-mock),
+   which gives one worker a spot interruption notice. Partway through, the boss
+   is lost and comes back under another address. Checked: every task done once,
+   finished tasks stay finished, the workers find the new boss, the interrupted
+   worker stops and copies its logs.
+3. **Real AWS** (`aws-test/run.sh`, a few cents on small burstable machines):
+   the same pipeline with a boss and spot fleets in two regions. A real spot
+   interruption can be sent with AWS Fault Injection Service (see "On AWS").
+
 ## Install
 
 ```r
