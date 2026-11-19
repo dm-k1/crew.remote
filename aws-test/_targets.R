@@ -30,7 +30,7 @@ list(
     tasks,
     {
       Sys.sleep(as.numeric(Sys.getenv("TASK_SECONDS", "30")))
-      cbind(task = task_ids, where(), pid = Sys.getpid(), finished = format(Sys.time()))
+      cbind(task = task_ids, where(), pid = Sys.getpid(), finished = format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "UTC"))
     },
     pattern = map(task_ids)
   )
