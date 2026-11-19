@@ -1,7 +1,7 @@
 #!/bin/bash
 ## =====================================================================
 ##  The boss of the AWS end-to-end test (user data; run.sh fills it in):
-##  runs ../pipeline/_targets.R in rocker/r-ver with workers in
+##  runs ../pipeline/_targets.R in the test image with workers in
 ##  WORKER_REGIONS, and writes tasks.csv to S3. Uses the helpers
 ##  inst/aws/launch_boss.sh puts in. Keeps the pipeline's store in S3 and
 ##  starts from it, so a boss that is lost can be replaced (run.sh
@@ -12,7 +12,7 @@ RUN_NAME="__RUN_NAME__"
 BUCKET_REGION="__BUCKET_REGION__"
 CODE="__CODE__"
 WORKER_REGIONS="__WORKER_REGIONS__"
-IMAGE="rocker/r-ver:4.6.1"
+IMAGE="__IMAGE__"
 PORT=5555
 LOG=/var/log/crew-remote-test.log
 exec > "$LOG" 2>&1
@@ -45,9 +45,9 @@ while true; do
   sleep 20
 done > /var/log/crew-remote-access.log 2>&1 &
 
+docker pull "$IMAGE"
 docker run --rm --network host -v /opt/project:/project -w /project \
   -e CREW_REMOTE_ADDRESS="$(crew_remote_metadata public-ipv4)" "$IMAGE" Rscript -e '
-    source("tests/end-to-end/aws/setup.R")
     setwd("tests/end-to-end/pipeline")
     targets::tar_make()
     write.csv(targets::tar_read(tasks), "tasks.csv", row.names = FALSE)

@@ -1,5 +1,9 @@
-# The image of the local end-to-end test: R, the packages, the AWS command line tool
-# (talking to a local S3), curl, and crew.remote from this checkout
+# The image of crew.remote's end-to-end tests, locally (../local) and on AWS
+# (../aws): R, targets and crew.remote's dependencies, the AWS command line
+# tool, curl, and crew.remote itself from this checkout. GitHub Actions
+# builds it for every commit on main and publishes it as
+# ghcr.io/dm-k1/crew.remote-test:sha-<commit> (.github/workflows/test-image.yaml),
+# so the machines of the AWS test start without installing anything.
 FROM rocker/r-ver:4.6.1
 RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends \
       curl libglpk40 python3-pip procps > /dev/null \

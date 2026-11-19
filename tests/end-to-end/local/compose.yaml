@@ -28,7 +28,7 @@ services:
     command: ["spot", "-d", "75", "-a", "terminate", "-I"]
 
   boss:
-    build: {context: ../../.., dockerfile: tests/end-to-end/local/Dockerfile}
+    build: {context: ../../.., dockerfile: tests/end-to-end/image/Dockerfile}
     hostname: boss
     init: true # reaps the lost boss's processes, so targets sees them gone
     networks:
@@ -39,21 +39,21 @@ services:
     depends_on: [s3]
 
   worker-a:
-    build: {context: ../../.., dockerfile: tests/end-to-end/local/Dockerfile}
+    build: {context: ../../.., dockerfile: tests/end-to-end/image/Dockerfile}
     hostname: worker-a
     environment: {<<: *aws, CREW_REMOTE_IMDS: "http://127.0.0.1:9"}
     command: bash tests/end-to-end/local/worker.sh
     depends_on: [s3]
 
   worker-b:
-    build: {context: ../../.., dockerfile: tests/end-to-end/local/Dockerfile}
+    build: {context: ../../.., dockerfile: tests/end-to-end/image/Dockerfile}
     hostname: worker-b
     environment: {<<: *aws, CREW_REMOTE_IMDS: "http://imds-b:1338"}
     command: bash tests/end-to-end/local/worker.sh
     depends_on: [s3, imds-b]
 
   worker-c:
-    build: {context: ../../.., dockerfile: tests/end-to-end/local/Dockerfile}
+    build: {context: ../../.., dockerfile: tests/end-to-end/image/Dockerfile}
     hostname: worker-c
     environment: {<<: *aws, CREW_REMOTE_IMDS: "http://127.0.0.1:9", BREAK_SETUP: "1"}
     command: bash tests/end-to-end/local/worker.sh

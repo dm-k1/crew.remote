@@ -3,7 +3,9 @@
 - Tests: R tests per part (`tests/testthat/`), and end-to-end tests in
   `tests/end-to-end/`: the same pipeline and checks without AWS (Docker
   Compose with moto and AWS's metadata mock, in GitHub Actions) and on AWS,
-  including a lost and restarted boss.
+  including a lost and restarted boss. GitHub Actions publishes the test image
+  (`ghcr.io/dm-k1/crew.remote-test`) for every commit, so the AWS test's
+  machines install nothing at start.
 
 - Workers that cannot reach the controller back off: each further start
   waits twice as long, up to 5 minutes; a new worker command is tried at once.

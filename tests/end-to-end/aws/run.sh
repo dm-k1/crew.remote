@@ -16,7 +16,10 @@
 ##  burstable ones (2 vCPUs: the boss on-demand t3.small, about $0.02 an hour;
 ##  workers spot t3/t3a small or medium, 2 workers each), as the tasks only
 ##  wait: a run costs a few cents. Other types: CREW_REMOTE_BOSS_TYPE,
-##  CREW_REMOTE_TYPES. Test changes without AWS first (../local).
+##  CREW_REMOTE_TYPES. Every machine uses the test image of <commit>
+##  (ghcr.io/dm-k1/crew.remote-test:sha-<commit>, built by GitHub Actions for
+##  every commit on main), so nothing is installed at start. Test changes
+##  without AWS first (../local).
 ## =====================================================================
 set -euo pipefail
 RUN_NAME="$1"
@@ -27,6 +30,7 @@ BOSS_ONLY="${5:-}"
 here="$(cd "$(dirname "$0")" && pwd)"
 aws_scripts="$here/../../../inst/aws"
 folder="s3://$CREW_REMOTE_BUCKET/$RUN_NAME"
+image="ghcr.io/dm-k1/crew.remote-test:sha-${CODE:0:7}"
 
 ## the boss
 if [ "$BOSS_ONLY" = "--boss-only" ]; then
@@ -35,7 +39,7 @@ fi
 boss_data=$(mktemp)
 text=$(cat "$here/boss-data.sh")
 for pair in "__RUN_FOLDER__=$folder" "__RUN_NAME__=$RUN_NAME" "__BUCKET_REGION__=$CREW_REMOTE_BUCKET_REGION" \
-            "__CODE__=$CODE" "__WORKER_REGIONS__=$WORKER_REGIONS"; do
+            "__CODE__=$CODE" "__WORKER_REGIONS__=$WORKER_REGIONS" "__IMAGE__=$image"; do
   text=${text//"${pair%%=*}"/"${pair#*=}"}
 done
 printf '%s\n' "$text" > "$boss_data"
@@ -46,7 +50,7 @@ rm -f "$boss_data"
 ## the workers, one fleet per region
 export CREW_REMOTE_REPO="https://github.com/dm-k1/crew.remote.git"
 export CREW_REMOTE_CODE="$CODE"
-export CREW_REMOTE_IMAGE="rocker/r-ver:4.6.1"
+export CREW_REMOTE_IMAGE="$image"
 export CREW_REMOTE_WORKER_COMMAND="Rscript tests/end-to-end/aws/worker.R"
 export CREW_REMOTE_CALL_FILE="cache/remote/worker_call.R"
 export CREW_REMOTE_TYPES="${CREW_REMOTE_TYPES:-t3.small t3a.small t3.medium t3a.medium}"
