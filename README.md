@@ -142,8 +142,9 @@ only as a final check.
    image GitHub Actions builds for every commit
    (`ghcr.io/dm-k1/crew.remote-test:sha-<commit>`), so nothing is installed
    at start. A real spot
-   interruption can be sent with AWS Fault Injection Service, and the boss
-   can be terminated and replaced (`run.sh ... --boss-only`).
+   interruption can be sent with AWS Fault Injection Service
+   (`tests/end-to-end/aws/interrupt.sh`), and the boss can be terminated and
+   replaced (`run.sh ... --boss-only`). Step by step: `DEVELOPMENT.md`.
 
 Both end-to-end tests run the same tiny pipeline
 (`tests/end-to-end/pipeline/_targets.R`) and the same checks
