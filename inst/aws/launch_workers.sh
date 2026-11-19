@@ -20,9 +20,14 @@
 ##                   (default cache/remote/worker_call.R)
 ##    TYPES          instance types (default: AMD 32-vCPU types, 32 real
 ##                   cores; Intel's 32 vCPUs are 16 hyperthreaded cores)
+##    CAPACITY_REBALANCE  1: when AWS signals that a machine is at risk of
+##                   being taken back, start its replacement at once (needs
+##                   spot quota for one machine more; default 0)
 ##
-##  The fleet is of type "maintain": when AWS takes a machine back, the
-##  fleet starts another. It ends after <hours>, and its machines with it
+##  The machines have encrypted disks, require IMDSv2, and sit in a security
+##  group with no inbound rules (crew-remote-workers): nothing can connect to
+##  them; they only dial out. The fleet is of type "maintain": when AWS takes
+##  a machine back, the fleet starts another. It ends after <hours>, and its machines with it
 ##  (the safety cutoff); the boss deletes it when the run is done. The
 ##  machines are tagged crew-remote-run = <run name>, by which the boss
 ##  finds them. Needs the AWS command line tool, logged in.
@@ -58,6 +63,18 @@ user_data=$(fill "$here/worker-data.sh" \
   __CALL_FILE__ "${CREW_REMOTE_CALL_FILE:-cache/remote/worker_call.R}" \
   __MAX_HOURS__ "$HOURS" | base64 | tr -d '\n')
 
+## the workers' security group in the default network: no inbound rules
+vpc=$(aws ec2 describe-vpcs --region "$REGION" --filters Name=is-default,Values=true \
+  --query 'Vpcs[0].VpcId' --output text)
+group=$(aws ec2 describe-security-groups --region "$REGION" \
+  --filters "Name=group-name,Values=crew-remote-workers" "Name=vpc-id,Values=$vpc" \
+  --query 'SecurityGroups[0].GroupId' --output text)
+if [ "$group" = "None" ]; then
+  group=$(aws ec2 create-security-group --region "$REGION" --vpc-id "$vpc" \
+    --group-name crew-remote-workers --description "crew.remote workers: no inbound, they only dial out" \
+    --query GroupId --output text)
+fi
+
 ## the launch template: Amazon Linux 2023, the role, a 40 GB disk,
 ## terminate on shutdown, and the tag by which the boss finds the machines
 image=$(aws ssm get-parameter --region "$REGION" \
@@ -69,7 +86,8 @@ template_data="{
     \"UserData\": \"$user_data\",
     \"InstanceInitiatedShutdownBehavior\": \"terminate\",
     \"BlockDeviceMappings\": [{\"DeviceName\": \"/dev/xvda\",
-      \"Ebs\": {\"VolumeSize\": 40, \"VolumeType\": \"gp3\", \"DeleteOnTermination\": true}}],
+      \"Ebs\": {\"VolumeSize\": 40, \"VolumeType\": \"gp3\", \"DeleteOnTermination\": true, \"Encrypted\": true}}],
+    \"SecurityGroupIds\": [\"$group\"],
     \"MetadataOptions\": {\"HttpTokens\": \"required\"},
     \"TagSpecifications\": [{\"ResourceType\": \"instance\",
       \"Tags\": [{\"Key\": \"crew-remote-run\", \"Value\": \"$RUN_NAME\"},
@@ -86,8 +104,6 @@ fi
 
 ## every type in every subnet of the default network, so the fleet can take
 ## whatever spot capacity there is
-vpc=$(aws ec2 describe-vpcs --region "$REGION" --filters Name=is-default,Values=true \
-  --query 'Vpcs[0].VpcId' --output text)
 subnets=$(aws ec2 describe-subnets --region "$REGION" --filters "Name=vpc-id,Values=$vpc" \
   --query 'Subnets[].SubnetId' --output text)
 overrides=""
@@ -98,6 +114,10 @@ for type in $TYPES; do
 done
 
 ## the fleet
+spot_options="AllocationStrategy=price-capacity-optimized"
+if [ "${CREW_REMOTE_CAPACITY_REBALANCE:-0}" = "1" ]; then
+  spot_options="$spot_options,MaintenanceStrategies={CapacityRebalance={ReplacementStrategy=launch}}"
+fi
 until=$(date -u -v+"${HOURS}"H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null ||
         date -u -d "+$HOURS hours" +%Y-%m-%dT%H:%M:%SZ)
 aws ec2 create-fleet --region "$REGION" \
@@ -105,7 +125,7 @@ aws ec2 create-fleet --region "$REGION" \
   --valid-until "$until" \
   --terminate-instances-with-expiration \
   --target-capacity-specification "TotalTargetCapacity=$MACHINES,DefaultTargetCapacityType=spot" \
-  --spot-options AllocationStrategy=price-capacity-optimized \
+  --spot-options "$spot_options" \
   --launch-template-configs "[{\"LaunchTemplateSpecification\": {\"LaunchTemplateName\": \"$NAME\", \"Version\": \"\$Latest\"},
                                \"Overrides\": [${overrides%,}]}]" \
   --tag-specifications "ResourceType=fleet,Tags=[{Key=crew-remote-run,Value=$RUN_NAME}]" \

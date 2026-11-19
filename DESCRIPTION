@@ -1,6 +1,6 @@
 Package: crew.remote
 Title: Workers on Other Machines for 'crew' (Unofficial)
-Version: 0.1.0
+Version: 0.2.0
 Authors@R:
     person("Diemithry M.", "Kloppenburg", email = "diemithrykloppenburg@hotmail.com",
            role = c("aut", "cre"))
