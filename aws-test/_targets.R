@@ -1,7 +1,8 @@
 ## =====================================================================
-##  A tiny pipeline to test crew.remote on AWS: 60 tasks that each wait 30
-##  seconds and report which machine (and AWS region) ran them. Run on the
-##  boss with CREW_REMOTE_ADDRESS set (aws-test/boss-data.sh).
+##  A tiny pipeline to test crew.remote: TASKS tasks (default 60) that each
+##  wait TASK_SECONDS (default 30) and report which machine (and AWS region)
+##  ran them. Run on the boss with CREW_REMOTE_ADDRESS set (on AWS by
+##  aws-test/boss-data.sh, locally by local-test/boss.sh).
 ## =====================================================================
 library(targets)
 tar_option_set(
@@ -24,11 +25,11 @@ where <- function() {
 }
 
 list(
-  tar_target(task_ids, seq_len(60)),
+  tar_target(task_ids, seq_len(as.integer(Sys.getenv("TASKS", "60")))),
   tar_target(
     tasks,
     {
-      Sys.sleep(30)
+      Sys.sleep(as.numeric(Sys.getenv("TASK_SECONDS", "30")))
       cbind(task = task_ids, where(), pid = Sys.getpid(), finished = format(Sys.time()))
     },
     pattern = map(task_ids)

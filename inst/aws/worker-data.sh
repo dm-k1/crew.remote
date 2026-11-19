@@ -68,22 +68,10 @@ echo "cores: $(nproc)"
 docker run -d --name worker --network host -v "$PWD":/project -w /project $DOCKER_OPTIONS \
   "$IMAGE" $WORKER_COMMAND
 
-## AWS's notice that it takes this spot machine back (HTTP 200 once given)
-taken_back() {
-  token=$(curl -s -X PUT http://169.254.169.254/latest/api/token \
-    -H "X-aws-ec2-metadata-token-ttl-seconds: 300")
-  [ "$(curl -s -o /dev/null -w '%{http_code}' -H "X-aws-ec2-metadata-token: $token" \
-    http://169.254.169.254/latest/meta-data/spot/instance-action)" = "200" ]
-}
-
 ## every 20 seconds: the boss's command, fresh from S3; stop when the run is
 ## done or AWS takes the machine back (its running tasks are then lost, and
 ## the boss hands them out again)
-while docker ps -q --filter name=worker | grep -q .; do
-  aws s3 cp "$RUN_FOLDER/worker_call.R" "$CALL_FILE.new" --only-show-errors 2>/dev/null &&
-    mv "$CALL_FILE.new" "$CALL_FILE"
-  aws s3 ls "$RUN_FOLDER/done" > /dev/null 2>&1 && break
-  if taken_back; then echo "AWS takes this machine back: stopping"; break; fi
-  sleep 20
-done
+# crew.remote: helpers
+crew_remote_workers_running() { docker ps -q --filter name=worker | grep -q .; }
+crew_remote_watch "$RUN_FOLDER" "$CALL_FILE"
 docker logs worker | tail -50
