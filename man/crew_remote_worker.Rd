@@ -9,6 +9,8 @@ crew_remote_worker(
   workers = parallelly::availableCores(),
   log_folder = file.path("cache", "logs", "workers"),
   seconds_interval = 10,
+  seconds_short = 60,
+  seconds_backoff_max = 300,
   stop_file = NULL
 )
 }
@@ -21,6 +23,11 @@ crew_remote_worker(
 every start added to it, with the times it started and stopped.}
 
 \item{seconds_interval}{How often to check the workers.}
+
+\item{seconds_short}{A start that ends sooner than this counts as not
+having reached the controller.}
+
+\item{seconds_backoff_max}{The longest wait between such starts.}
 
 \item{stop_file}{Stop (and stop the workers) once this file exists;
 \code{NULL} to run until the R session is stopped.}
@@ -38,4 +45,9 @@ machine, the workers find it again once the new file is copied here.
 Set up anything the workers need (environment variables, compiled
 models) before calling this: the workers inherit this R session's
 environment variables.
+
+While the controller cannot be reached (workers stop within
+\code{seconds_short} of starting), each further start waits twice as long as
+the one before, up to \code{seconds_backoff_max}; a new command in
+\code{call_file} (a controller elsewhere) is tried at once.
 }

@@ -15,7 +15,8 @@
 ##  change security groups tagged crew-remote-role = boss and delete fleets
 ##  tagged crew-remote-run (boss-policy.json).
 ##
-##  Its security group (crew-remote-boss-<run name>) starts closed; the boss
+##  Its disk is encrypted and it requires IMDSv2. Its security group
+##  (crew-remote-boss-<run name>) starts closed; the boss
 ##  opens the workers' port to its own worker machines only
 ##  (crew_remote_let_workers_in). Needs the AWS command line tool, logged in.
 ## =====================================================================
@@ -58,7 +59,7 @@ aws ec2 run-instances --region "$REGION" \
   --security-group-ids "$group" \
   --instance-initiated-shutdown-behavior terminate \
   --metadata-options HttpTokens=required \
-  --block-device-mappings 'DeviceName=/dev/xvda,Ebs={VolumeSize=40,VolumeType=gp3,DeleteOnTermination=true}' \
+  --block-device-mappings 'DeviceName=/dev/xvda,Ebs={VolumeSize=40,VolumeType=gp3,DeleteOnTermination=true,Encrypted=true}' \
   --user-data "file://$filled" \
   --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$NAME},{Key=crew-remote-boss,Value=$RUN_NAME}]" \
   --query 'Instances[0].InstanceId' --output text

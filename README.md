@@ -32,9 +32,34 @@ and preferred a plugin ([crew#200](https://github.com/wlandau/crew/issues/200)).
   controller stops or cannot be reached, and starts again with the command in
   the file at that moment.
 
-**Security.** mirai has no password for workers: whoever can reach the port
-can take tasks. Let only your own machines through (a firewall, a VPN, a
-cloud security group; the AWS scripts below do this per run).
+## Security
+
+What protects a run, and what does not:
+
+- **Who can connect.** mirai has no password or client certificate for
+  workers: whoever can reach the port can take tasks (and see their inputs)
+  or send back wrong results. So the network must let in only your own
+  machines: a firewall, a VPN, or a cloud security group. The AWS scripts
+  open the port only to the public addresses of the run's own worker
+  machines, updated every 20 seconds, and closed otherwise. Do not open the
+  port to the whole internet.
+- **The traffic.** TLS encrypts it, and a worker checks the controller's
+  certificate, so it cannot be sent to a fake controller. The private key
+  stays on the boss (readable by its owner only); the worker command file
+  holds only the certificate, which is public by nature.
+- **On AWS** the scripts follow AWS's usual advice: instance roles instead of
+  keys (no access keys on any machine), least privilege (the boss may change
+  only its own security groups and delete only the run's fleets; workers may
+  read the bucket and write only their own logs: `worker-policy.json`),
+  IMDSv2 required, encrypted disks, no SSH (use Systems Manager if you must
+  get in), and worker machines in a security group with no inbound rules at
+  all. Keep the bucket's public access blocked.
+- **Not covered.** Anyone who controls a machine you let in can tamper with
+  results; a worker's address that AWS gives to another account within the 20
+  seconds before it is closed could connect (TLS still protects the
+  controller's identity, not yours). A stricter setup puts all machines in
+  private networks joined by VPC peering, with the port open to private
+  addresses only; the scripts do not set that up.
 
 ## In a targets pipeline
 
@@ -69,7 +94,17 @@ Services (Amazon Linux 2023 and Docker on every machine):
   back, without anyone watching. The fleet ends after a given number of hours,
   machines and all. Its machines run `worker-data.sh`, which reads the worker
   command from S3 every 20 seconds and stops when the boss writes `done`.
-- `boss-policy.json`: what the boss's role may do (replace `__BUCKET__`).
+  When AWS gives notice that it takes a machine back (two minutes ahead), the
+  machine copies its logs to S3 and stops; its running tasks go to other
+  workers. `CREW_REMOTE_CAPACITY_REBALANCE=1` starts a replacement as soon as
+  AWS signals a machine is at risk (needs spot quota for one machine more).
+- `boss-policy.json` and `worker-policy.json`: what the boss's and the
+  workers' roles may do (replace `__BUCKET__`).
+
+**Testing a lost machine for real.** AWS Fault Injection Service can send a
+real spot interruption (action `aws:ec2:send-spot-instance-interruptions`) to
+the run's worker machines (tag `crew-remote-run`), which is the honest test of
+what happens when AWS takes one back.
 
 Settings are environment variables (`CREW_REMOTE_BUCKET`, `CREW_REMOTE_IMAGE`,
 ...; see the top of each script). An example project that uses all of this:
