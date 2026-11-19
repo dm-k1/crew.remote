@@ -130,7 +130,10 @@ only as a final check.
    which gives one worker a spot interruption notice. Partway through, the
    boss is lost and comes back under another address.
 3. **End to end on AWS** (`tests/end-to-end/aws/run.sh`, a few cents on small
-   burstable machines): a boss and spot fleets in two regions. A real spot
+   burstable machines): a boss and spot fleets in two regions, all in the test
+   image GitHub Actions builds for every commit
+   (`ghcr.io/dm-k1/crew.remote-test:sha-<commit>`), so nothing is installed
+   at start. A real spot
    interruption can be sent with AWS Fault Injection Service, and the boss
    can be terminated and replaced (`run.sh ... --boss-only`).
 
