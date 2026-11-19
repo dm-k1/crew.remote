@@ -1,3 +1,4 @@
 ^LICENSE\.md$
 ^\.github$
 ^tests/end-to-end$
+^DEVELOPMENT\.md$
