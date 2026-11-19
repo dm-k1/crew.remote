@@ -14,10 +14,13 @@
       "Resource": "arn:aws:s3:::__BUCKET__/*"
     },
     {
-      "Sid": "WriteOnlyTheirOwnLogs",
+      "Sid": "WriteOnlyTheirLogsAndWhyTheyStopped",
       "Effect": "Allow",
       "Action": ["s3:PutObject"],
-      "Resource": "arn:aws:s3:::__BUCKET__/*/worker-logs/*"
+      "Resource": [
+        "arn:aws:s3:::__BUCKET__/*/worker-logs/*",
+        "arn:aws:s3:::__BUCKET__/*/worker-stops/*"
+      ]
     }
   ]
 }

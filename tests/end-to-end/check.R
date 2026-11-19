@@ -53,8 +53,9 @@ if (nzchar(failed)) {
   checks["the machine whose setup failed reported it"] <- identical(unname(stops[failed]), "the workers stopped")
 }
 others <- stops[setdiff(names(stops), failed)]
+checks["every machine that ran tasks reported why it stopped"] <- length(others) >= length(unique(tasks$host))
 checks["the other machines stopped for the expected reasons"] <-
-  all(others %in% c("the run is done", "AWS takes this machine back"))
+  length(others) > 0 && all(others %in% c("the run is done", "AWS takes this machine back"))
 
 for (name in names(checks)) cat(if (isTRUE(checks[[name]])) "PASS" else "FAIL", name, "\n")
 quit(status = if (all(checks)) 0 else 1)

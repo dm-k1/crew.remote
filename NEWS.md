@@ -15,7 +15,8 @@
 - AWS: encrypted disks; worker machines in a security group with no inbound
   rules; a worker machine that gets AWS's spot interruption notice copies its
   logs and stops; optional capacity rebalancing (`CREW_REMOTE_CAPACITY_REBALANCE=1`);
-  `worker-policy.json`, a least-privilege role for the workers.
+  `worker-policy.json`, a least-privilege role for the workers (they may
+  write only `worker-logs/` and `worker-stops/`).
 - README: a security section (what is protected and what is not).
 - GitHub Actions: R CMD check with the tests on Linux and macOS.
 
