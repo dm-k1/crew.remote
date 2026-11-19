@@ -1,5 +1,9 @@
 # crew.remote 0.2.0
 
+- AWS: `setup.sh` creates the roles once (least privilege; default names
+  crew-remote-boss, crew-remote-worker, crew-remote-fis), `teardown.sh`
+  removes them and what past runs left.
+
 - Tests: R tests per part (`tests/testthat/`), and end-to-end tests in
   `tests/end-to-end/`: the same pipeline and checks without AWS (Docker
   Compose with moto and AWS's metadata mock, in GitHub Actions) and on AWS,
