@@ -8,7 +8,8 @@
 ##  Settings, as environment variables (CREW_REMOTE_...):
 ##    BUCKET         S3 bucket for the worker command, logs and "done"
 ##    BUCKET_REGION  the bucket's region
-##    WORKER_ROLE    instance profile that may read and write the bucket
+##    WORKER_ROLE    instance profile that may read the bucket and write the
+##                   workers' logs (default crew-remote-worker, made by setup.sh)
 ##    REPO           git repository of the project (https URL)
 ##    CODE           the commit to run ("" for the default branch), or an
 ##                   s3:// .tar.gz of the project; the boss's code
@@ -37,7 +38,8 @@ REGION="$1"
 MACHINES="$2"
 RUN_NAME="$3"
 HOURS="$4"
-: "${CREW_REMOTE_BUCKET:?}" "${CREW_REMOTE_BUCKET_REGION:?}" "${CREW_REMOTE_WORKER_ROLE:?}"
+: "${CREW_REMOTE_BUCKET:?}" "${CREW_REMOTE_BUCKET_REGION:?}"
+CREW_REMOTE_WORKER_ROLE="${CREW_REMOTE_WORKER_ROLE:-crew-remote-worker}"
 : "${CREW_REMOTE_REPO:?}" "${CREW_REMOTE_IMAGE:?}" "${CREW_REMOTE_WORKER_COMMAND:?}"
 CODE="${CREW_REMOTE_CODE:-}"
 TYPES="${CREW_REMOTE_TYPES:-c7a.8xlarge m7a.8xlarge r7a.8xlarge}"

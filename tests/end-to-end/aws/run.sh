@@ -11,8 +11,9 @@
 ##  one first); it continues from the run's store in S3, and the time of the
 ##  restart is written to S3 for the checks.
 ##
-##  Settings as for inst/aws (CREW_REMOTE_BUCKET, CREW_REMOTE_BUCKET_REGION,
-##  CREW_REMOTE_BOSS_ROLE, CREW_REMOTE_WORKER_ROLE). The machines are small
+##  Settings as for inst/aws: CREW_REMOTE_BUCKET and CREW_REMOTE_BUCKET_REGION
+##  (the roles are those of inst/aws/setup.sh unless CREW_REMOTE_BOSS_ROLE or
+##  CREW_REMOTE_WORKER_ROLE say otherwise). The machines are small
 ##  burstable ones (2 vCPUs: the boss on-demand t3.small, about $0.02 an hour;
 ##  workers spot t3/t3a small or medium, 2 workers each), as the tasks only
 ##  wait: a run costs a few cents. Other types: CREW_REMOTE_BOSS_TYPE,

@@ -10,8 +10,8 @@
 ##  "# crew.remote: helpers" (or "# crew.remote: boss helpers"), the
 ##  functions of helpers.sh are put in, for it to call. On-demand, so AWS does not take it back.
 ##
-##  Settings, as environment variables: CREW_REMOTE_BOSS_ROLE, an instance
-##  profile that may use the bucket, see the run's instances and fleets,
+##  Settings, as environment variables: CREW_REMOTE_BOSS_ROLE (default
+##  crew-remote-boss, made by setup.sh), an instance profile that may use the bucket, see the run's instances and fleets,
 ##  change security groups tagged crew-remote-role = boss and delete fleets
 ##  tagged crew-remote-run (boss-policy.json).
 ##
@@ -25,7 +25,7 @@ REGION="$1"
 RUN_NAME="$2"
 USER_DATA="$3"
 TYPE="${4:-m7a.large}"
-: "${CREW_REMOTE_BOSS_ROLE:?}"
+CREW_REMOTE_BOSS_ROLE="${CREW_REMOTE_BOSS_ROLE:-crew-remote-boss}"
 NAME="crew-remote-boss-$RUN_NAME"
 here="$(cd "$(dirname "$0")" && pwd)"
 

@@ -85,6 +85,13 @@ this and a local controller keeps finished targets.
 `system.file("aws", package = "crew.remote")` holds scripts for Amazon Web
 Services (Amazon Linux 2023 and Docker on every machine):
 
+- `setup.sh`, once per account: the three roles the scripts use, with least
+  privilege (boss, workers, and one for AWS Fault Injection Service), from
+  `boss-policy.json` and `worker-policy.json`. `teardown.sh "<regions>"`
+  removes them again, together with what past runs left (launch templates,
+  security groups, experiment templates); it refuses while a run is going,
+  and leaves the runs' results in S3.
+
 - `launch_boss.sh`: the boss, one on-demand instance (AWS does not take it
   back) with a security group that starts closed. It runs your own user data
   script, into which it puts `helpers.sh`: functions to copy the worker
@@ -103,7 +110,7 @@ Services (Amazon Linux 2023 and Docker on every machine):
   machine stopped is in `s3://<bucket>/<run name>/worker-stops/`. `CREW_REMOTE_CAPACITY_REBALANCE=1` starts a replacement as soon as
   AWS signals a machine is at risk (needs spot quota for one machine more).
 - `boss-policy.json` and `worker-policy.json`: what the boss's and the
-  workers' roles may do (replace `__BUCKET__`).
+  workers' roles may do (`setup.sh` fills in the bucket).
 
 **Testing a lost machine for real.** AWS Fault Injection Service can send a
 real spot interruption (action `aws:ec2:send-spot-instance-interruptions`) to
