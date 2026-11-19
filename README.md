@@ -50,7 +50,8 @@ What protects a run, and what does not:
 - **On AWS** the scripts follow AWS's usual advice: instance roles instead of
   keys (no access keys on any machine), least privilege (the boss may change
   only its own security groups and delete only the run's fleets; workers may
-  read the bucket and write only their own logs: `worker-policy.json`),
+  read the bucket and write only their logs and why they stopped:
+  `worker-policy.json`),
   IMDSv2 required, encrypted disks, no SSH (use Systems Manager if you must
   get in), and worker machines in a security group with no inbound rules at
   all. Keep the bucket's public access blocked.
