@@ -2,8 +2,9 @@
 # "machines" (containers), S3 replaced by moto (Python's AWS mock, in server
 # mode), and the instance metadata
 # service replaced by AWS's own mock (amazon-ec2-metadata-mock), which gives
-# worker-b a spot interruption notice 40 seconds in. The boss checks the
-# outcome and its exit status is the test's (local-test/check.R).
+# worker-b a spot interruption notice 75 seconds in. 30 seconds in, the boss
+# is lost and comes back under another address (local-test/boss.sh). The boss
+# checks the outcome and its exit status is the test's (local-test/check.R).
 #
 #   docker compose -f local-test/compose.yaml up --build --abort-on-container-exit --exit-code-from boss
 x-aws: &aws
@@ -12,7 +13,7 @@ x-aws: &aws
   AWS_DEFAULT_REGION: us-east-1
   AWS_ENDPOINT_URL: http://s3:5000
   RUN_FOLDER: s3://crew-remote-test/local
-  TASKS: "60"
+  TASKS: "80"
   TASK_SECONDS: "5"
   CREW_REMOTE_WATCH_SECONDS: "3"
 
@@ -22,12 +23,15 @@ services:
 
   imds-b:
     image: public.ecr.aws/aws-ec2/amazon-ec2-metadata-mock:v1.13.0
-    command: ["spot", "-d", "40", "-a", "terminate", "-I"]
+    command: ["spot", "-d", "75", "-a", "terminate", "-I"]
 
   boss:
     build: {context: .., dockerfile: local-test/Dockerfile}
     hostname: boss
-    environment: {<<: *aws, CREW_REMOTE_ADDRESS: boss}
+    networks:
+      default:
+        aliases: [boss-again]
+    environment: *aws
     command: bash local-test/boss.sh
     depends_on: [s3]
 
