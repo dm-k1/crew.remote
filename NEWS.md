@@ -7,6 +7,9 @@
 
 - Workers that cannot reach the controller back off: each further start
   waits twice as long, up to 5 minutes; a new worker command is tried at once.
+- AWS: a worker machine whose workers stop by themselves (a failed setup)
+  stays up idle until its safety cutoff instead of being replaced again and
+  again; every machine reports why it stopped (`worker-stops/`).
 - AWS: encrypted disks; worker machines in a security group with no inbound
   rules; a worker machine that gets AWS's spot interruption notice copies its
   logs and stops; optional capacity rebalancing (`CREW_REMOTE_CAPACITY_REBALANCE=1`);

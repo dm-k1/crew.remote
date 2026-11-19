@@ -21,6 +21,8 @@
 ##        every 20 seconds, the worker command from S3 to the call file;
 ##        returns when the workers stop, the boss writes "done", or AWS gives
 ##        notice that it takes the machine back (and says which)
+##    crew_remote_report_stop <s3 run folder> <machine> <why>
+##        writes why the machine stopped to <run folder>/worker-stops/<machine>.txt
 ## =====================================================================
 
 ## this instance's own details (the instance metadata service, IMDSv2):
@@ -104,4 +106,9 @@ crew_remote_watch() {
     sleep "${CREW_REMOTE_WATCH_SECONDS:-20}"
   done
   echo "the workers stopped"
+}
+
+crew_remote_report_stop() {
+  local folder="$1" machine="$2" why="$3"
+  echo "$why" | aws s3 cp - "$folder/worker-stops/$machine.txt" --only-show-errors || true
 }

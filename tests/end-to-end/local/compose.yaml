@@ -2,7 +2,7 @@
 # "machines" (containers), S3 replaced by moto (Python's AWS mock, in server
 # mode), and the instance metadata
 # service replaced by AWS's own mock (amazon-ec2-metadata-mock), which gives
-# worker-b a spot interruption notice 75 seconds in. 30 seconds in, the boss
+# worker-b a spot interruption notice 75 seconds in; worker-c's setup fails. 30 seconds in, the boss
 # is lost and comes back under another address (boss.sh). The boss runs the
 # checks at the end (../check.R); its exit status is the test's.
 #
@@ -17,6 +17,7 @@ x-aws: &aws
   TASK_SECONDS: "5"
   CREW_REMOTE_WATCH_SECONDS: "3"
   EXPECT_SPOT: "1"
+  EXPECT_FAILED: "worker-c"
 
 services:
   s3:
@@ -50,3 +51,10 @@ services:
     environment: {<<: *aws, CREW_REMOTE_IMDS: "http://imds-b:1338"}
     command: bash tests/end-to-end/local/worker.sh
     depends_on: [s3, imds-b]
+
+  worker-c:
+    build: {context: ../../.., dockerfile: tests/end-to-end/local/Dockerfile}
+    hostname: worker-c
+    environment: {<<: *aws, CREW_REMOTE_IMDS: "http://127.0.0.1:9", BREAK_SETUP: "1"}
+    command: bash tests/end-to-end/local/worker.sh
+    depends_on: [s3]
