@@ -1,0 +1,30 @@
+Package: crew.remote
+Title: Workers on Other Machines for 'crew' (Unofficial)
+Version: 0.1.0
+Authors@R:
+    person("Diemithry M.", "Kloppenburg", email = "diemithrykloppenburg@hotmail.com",
+           role = c("aut", "cre"))
+Description: An unofficial launcher plugin for 'crew': the controller starts
+    no workers but writes the command they must run, and workers started on
+    other machines (other computers, other cloud regions) dial in over TLS,
+    take tasks and send back results. A small worker program keeps them
+    going, and scripts for Amazon Web Services start the machines as spot
+    fleets in one or several regions. NOT part of 'crew' and not made,
+    reviewed or endorsed by the authors of 'crew' or 'mirai'.
+License: MIT + file LICENSE
+URL: https://github.com/dm-k1/crew.remote
+BugReports: https://github.com/dm-k1/crew.remote/issues
+Imports:
+    crew (>= 1.3.0),
+    nanonext,
+    parallelly,
+    processx,
+    R6
+Suggests:
+    ps,
+    testthat (>= 3.0.0)
+SystemRequirements: the openssl command line tool (to write the TLS key)
+Config/testthat/edition: 3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.0
